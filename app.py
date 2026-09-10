@@ -14,7 +14,7 @@ st.set_page_config(
 # --- BASİT OTURUM / ŞİFRE KONTROLÜ ---
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "tmk2026":
+        if st.session_state["password"] == "ege12345":
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
