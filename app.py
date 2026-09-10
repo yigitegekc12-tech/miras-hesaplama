@@ -3,7 +3,7 @@ import pandas as pd
 
 # --- SAYFA YAPILANDIRMASI ---
 st.set_page_config(
-    page_title="TMK Miras ve Mal Rejimi Hesaplama Aracı",
+    page_title="TMK Profesyonel Miras ve Mal Rejimi Sistemi",
     page_icon="⚖️",
     layout="wide"
 )
@@ -33,23 +33,70 @@ if not check_password():
     st.stop()
 
 # --- ANA UYGULAMA ---
-st.title("⚖️ Türk Medeni Kanunu (TMK) Miras & Mal Rejimi Hesaplama")
-st.markdown("Bu araç; yasal miras payları, saklı paylar, torun temsil ilkeleri ve **masrafların mirasçı paylarından otomatik düşüldüğü** net intikal hesaplamalarını yapar.")
+st.title("⚖️ Türk Medeni Kanunu Profesyonel Miras & Mali Tasfiye Sistemi")
+st.markdown("Bu sistem; **Aktif-Pasif Tereke Tespiti**, Zümre/Torun Temsil Payları, Mal Rejimi Tasfiyesi ve Masraf Düşüm Hesaplamalarını kapsamlı olarak yürütür.")
 
-st.sidebar.header("🗂️ İşlem Seçimi")
+st.sidebar.header("🗂️ Modül Seçimi")
 islem_turu = st.sidebar.selectbox(
-    "Hesaplama Modülü Seçin:",
+    "Gelişmiş Modül Seçin:",
     [
-        "Zümre Bazlı Yasal Miras ve Saklı Paylar", 
-        "Edinilmiş Mallara Katılma Rejimi Tasfiyesi", 
-        "Tapu İntikal ve Masraf Düşüm Hesabı"
+        "1. Modül: Aktif / Pasif (Net Tereke ve Borç) Analizi",
+        "2. Modül: Zümre Bazlı Yasal Miras ve Saklı Paylar", 
+        "3. Modül: Edinilmiş Mallara Katılma Rejimi Tasfiyesi", 
+        "4. Modül: Tapu İntikal ve Masraf Düşüm Hesabı"
     ]
 )
 
-if islem_turu == "Zümre Bazlı Yasal Miras ve Saklı Paylar":
+# --- 1. MODÜL: AKTİF / PASİF (NET TEREKE) ANALİZİ ---
+if islem_turu == "1. Modül: Aktif / Pasif (Net Tereke ve Borç) Analizi":
+    st.header("💼 Adım 1: Tereke Aktifleri ve Borçlarının (Pasiflerin) Tespiti")
+    st.markdown("Türk Medeni Kanunu gereğince mirasçılara geçecek olan değer, brüt varlıklardan murisin borçları, cenaze masrafları ve tereke yönetim giderleri çıktıktan sonra kalan **Net Tereke** değeridir.")
+
+    col_ap1, col_ap2 = st.columns(2)
+    
+    with col_ap1:
+        st.subheader("📈 Tereke Aktifleri (Mal Varlıkları)")
+        gayrimenkul_aktif = st.number_input("Gayrimenkuller Toplam Değeri (TL):", min_value=0.0, value=3000000.0, step=50000.0, key="g_aktif")
+        nakit_aktif = st.number_input("Banka Mevduatı / Nakit Değeri (TL):", min_value=0.0, value=500000.0, step=10000.0, key="n_aktif")
+        arac_aktif = st.number_input("Menkul / Araç Toplam Değeri (TL):", min_value=0.0, value=750000.0, step=25000.0, key="a_aktif")
+        diger_aktif = st.number_input("Diğer Haklar ve Alacaklar (TL):", min_value=0.0, value=0.0, step=10000.0, key="d_aktif")
+
+    with col_ap2:
+        st.subheader("📉 Tereke Pasifleri (Borçlar ve Giderler)")
+        banka_kredi_borcu = st.number_input("Banka Kredileri ve Kredi Kartı Borçları (TL):", min_value=0.0, value=200000.0, step=10000.0, key="b_borc")
+        piyasa_borcu = st.number_input("Şahıs / Ticari Piyasa Borçları (TL):", min_value=0.0, value=50000.0, step=10000.0, key="p_borc")
+        cenaze_masrafi = st.number_input("Cenaze ve Defin Masrafları (TMK m.507) (TL):", min_value=0.0, value=75000.0, step=5000.0, key="c_masraf")
+        tereke_yonetim_gideri = st.number_input("Terekenin Mühürlenmesi ve Yönetim Giderleri (TL):", min_value=0.0, value=25000.0, step=5000.0, key="t_gider")
+
+    if st.button("Net Terekeyi Hesapla ve Kaydet"):
+        toplam_aktif = gayrimenkul_aktif + nakit_aktif + arac_aktif + diger_aktif
+        toplam_pasif = banka_kredi_borcu + piyasa_borcu + cenaze_masrafi + tereke_yonetim_gideri
+        net_tereke = max(0.0, toplam_aktif - toplam_pasif)
+
+        # Oturumda saklayalım ki diğer modüller bu net terekeyi otomatik kullanabilsin
+        st.session_state["net_tereke"] = net_tereke
+        st.session_state["toplam_aktif"] = toplam_aktif
+        st.session_state["toplam_pasif"] = toplam_pasif
+
+        st.success("✅ Net Tereke başarıyla hesaplandı ve sistem hafızasına kaydedildi!")
+        
+        st.markdown("---")
+        col_s1, col_s2, col_s3 = st.columns(3)
+        col_s1.metric("Toplam Brüt Aktif", f"{toplam_aktif:,.2f} TL")
+        col_s2.metric("Toplam Pasif (Borçlar)", f"{toplam_pasif:,.2f} TL")
+        col_s3.metric("Net Tereke (Paylaşılacak Tutar)", f"{net_tereke:,.2f} TL", delta=f"-{toplam_pasif:,.2f} TL Borç Düşüldü")
+
+        if net_tereke == 0.0:
+            st.warning("⚠️ Dikkat: Tereke pasif borçlara batıktır (Borca batık tereke). Mirasın hükmen veya resmi olarak reddi durumları gündeme gelebilir.")
+
+# --- 2. MODÜL: ZÜMRE BAZLI YASAL MİRAS VE SAKLI PAYLAR ---
+elif islem_turu == "2. Modül: Zümre Bazlı Yasal Miras ve Saklı Paylar":
     st.header("👥 Kapsamlı Zümre, Altsoy ve Torun Temsil Hesaplayıcı")
     
-    tereke_degeri = st.number_input("Toplam Tereke Aktifi (TL):", min_value=0.0, value=1000000.0, step=50000.0)
+    # Varsayılan değer olarak 1. modülden gelen net terekeyi alalım
+    varsayilan_tereke = st.session_state.get("net_tereke", 3500000.0)
+    tereke_degeri = st.number_input("Paylaştırılacak Net Tereke Aktifi (TL):", min_value=0.0, value=varsayilan_tereke, step=50000.0, help="1. Modülden hesaplanan net tereke buraya otomatik yansıtılır.")
+    
     zumre_secimi = st.selectbox(
         "Mirasçının Bulunduğu Zümre / Durum:",
         [
@@ -125,17 +172,18 @@ if islem_turu == "Zümre Bazlı Yasal Miras ve Saklı Paylar":
             df_sonuc = pd.DataFrame(sonuclar)
             st.dataframe(df_sonuc, use_container_width=True)
 
-elif islem_turu == "Edinilmiş Mallara Katılma Rejimi Tasfiyesi":
+# --- 3. MODÜL: EDİNİLMİŞ MALLARA KATILMA REJİMİ TASFİYESİ ---
+elif islem_turu == "3. Modül: Edinilmiş Mallara Katılma Rejimi Tasfiyesi":
     st.header("💍 Mal Rejimi Tasfiyesi (Artık Değer Hesabı)")
     col_e1, col_e2 = st.columns(2)
     with col_e1:
-        aktif_1 = st.number_input("Eş 1 Aktif", min_value=0.0, value=2000000.0, key="a1")
-        borc_1 = st.number_input("Eş 1 Borç", min_value=0.0, value=500000.0, key="b1")
-        kisisel_1 = st.number_input("Eş 1 Kişisel", min_value=0.0, value=300000.0, key="k1")
+        aktif_1 = st.number_input("Eş 1 Mal Varlığı Aktifi", min_value=0.0, value=2000000.0, key="a1")
+        borc_1 = st.number_input("Eş 1 Borçları", min_value=0.0, value=500000.0, key="b1")
+        kisisel_1 = st.number_input("Eş 1 Kişisel Malları", min_value=0.0, value=300000.0, key="k1")
     with col_e2:
-        aktif_2 = st.number_input("Eş 2 Aktif", min_value=0.0, value=1000000.0, key="a2")
-        borc_2 = st.number_input("Eş 2 Borç", min_value=0.0, value=100000.0, key="b2")
-        kisisel_2 = st.number_input("Eş 2 Kişisel", min_value=0.0, value=200000.0, key="k2")
+        aktif_2 = st.number_input("Eş 2 Mal Varlığı Aktifi", min_value=0.0, value=1000000.0, key="a2")
+        borc_2 = st.number_input("Eş 2 Borçları", min_value=0.0, value=100000.0, key="b2")
+        kisisel_2 = st.number_input("Eş 2 Kişisel Malları", min_value=0.0, value=200000.0, key="k2")
 
     if st.button("Tasfiye Hesapla"):
         ad1 = max(0.0, aktif_1 - borc_1 - kisisel_1)
@@ -144,14 +192,14 @@ elif islem_turu == "Edinilmiş Mallara Katılma Rejimi Tasfiyesi":
         katilma = toplam_artik / 2
         st.success(f"💰 Toplam Artık Değer: {toplam_artik:,.2f} TL | Eşlerin Katılma Alacağı: {katilma:,.2f} TL")
 
-elif islem_turu == "Tapu İntikal ve Masraf Düşüm Hesabı":
+# --- 4. MODÜL: TAPU İNTİKAL VE MASRAF DÜŞÜM HESABI ---
+elif islem_turu == "4. Modül: Tapu İntikal ve Masraf Düşüm Hesabı":
     st.header("🏛️ Tapu İntikal Harçları ve Masrafların Paylardan Düşülmesi")
-    st.markdown("Bu modül; intikal harcı, döner sermaye ve diğer resmi masrafları toplam tereke üzerinden hesaplayıp **tüm mirasçıların payından oranları doğrultusunda otomatik olarak düşer**.")
-
+    
     col_m1, col_m2 = st.columns(2)
     with col_m1:
         gayrimenkul_degeri = st.number_input("Tapu / Gayrimenkul Toplam Değeri (TL):", min_value=0.0, value=3000000.0, step=100000.0)
-        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01, help="Miras intikallerinde binde 2.27 (%0.227) uygulanır.")
+        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01)
         doner_serg = st.number_input("Tapu Döner Sermaye / Ek Masraflar (TL):", min_value=0.0, value=1350.0, step=100.0)
     
     with col_m2:
@@ -161,17 +209,14 @@ elif islem_turu == "Tapu İntikal ve Masraf Düşüm Hesabı":
         var_es = True if "Eş +" in mirasci_tipi else False
 
     if st.button("Masrafları Düşerek Net Payları Hesapla"):
-        # Toplam Resmi Masraf Tutarı
         toplam_tapu_harci = gayrimenkul_degeri * (intikal_orani / 100.0)
         toplam_resmi_masraf = toplam_tapu_harci + doner_serg
         
-        # Miras pay oranlarının tespiti
         detaylar = []
         if var_es:
             es_pay_orani = 0.25
             cocuklar_toplam_oran = 0.75
             
-            # Sağ eş hak edişleri
             brut_es = gayrimenkul_degeri * es_pay_orani
             masraf_es = toplam_resmi_masraf * es_pay_orani
             net_es = brut_es - masraf_es
@@ -211,7 +256,6 @@ elif islem_turu == "Tapu İntikal ve Masraf Düşüm Hesabı":
                 })
 
         st.info(f"💡 **Toplam Tahsil Edilecek Devlet Masrafı:** {toplam_resmi_masraf:,.2f} TL (İntikal Harcı: {toplam_tapu_harci:,.2f} TL + Döner Sermaye: {doner_serg:,.2f} TL)")
-        
         st.subheader("📉 Masrafların Otomatik Düşüldüğü Net Mirasçı Dağılım Tablosu")
         df_net = pd.DataFrame(detaylar)
         st.dataframe(df_net, use_container_width=True)
