@@ -34,7 +34,7 @@ if not check_password():
 
 # --- ANA UYGULAMA ---
 st.title("⚖️ Türk Medeni Kanunu (TMK) Miras & Mal Rejimi Hesaplama")
-st.markdown("Bu araç; yasal miras payları, saklı paylar, mal rejimi tasfiyesi, tapu harçları ve **torunlar/altsoy temsil ilkelerini** kararlı bir arayüzle hesaplar.")
+st.markdown("Bu araç; yasal miras payları, saklı paylar, mal rejimi tasfiyesi, tapu harçları ve **torunlar/altsoy temsil ilkelerini** hesaplar.")
 
 st.sidebar.header("🗂️ İşlem Seçimi")
 islem_turu = st.sidebar.selectbox(
@@ -45,36 +45,34 @@ islem_turu = st.sidebar.selectbox(
 if islem_turu == "Zümre Bazlı Yasal Miras ve Saklı Paylar":
     st.header("👥 Kapsamlı Zümre, Altsoy ve Torun Temsil Hesaplayıcı")
     
-    with st.form("miras_formu"):
-        tereke_degeri = st.number_input("Toplam Tereke Aktifi (TL):", min_value=0.0, value=1000000.0, step=50000.0)
-        zumre_secimi = st.selectbox(
-            "Mirasçının Bulunduğu Zümre / Durum:",
-            [
-                "1. Zümre: Çocuklar, Torunlar (Altsoy) ve Sağ Eş",
-                "2. Zümre: Anne, Baba, Kardeşler ve Sağ Eş",
-                "3. Zümre: Büyük anne, Büyük baba ve Çocukları / Sağ Eş",
-                "Yalnızca Sağ Eş (Hiçbir zümre akrabası yok)"
-            ]
-        )
-        sag_es = st.checkbox("Sağ Eş Hayatta mı?", value=True)
+    tereke_degeri = st.number_input("Toplam Tereke Aktifi (TL):", min_value=0.0, value=1000000.0, step=50000.0)
+    zumre_secimi = st.selectbox(
+        "Mirasçının Bulunduğu Zümre / Durum:",
+        [
+            "1. Zümre: Çocuklar, Torunlar (Altsoy) ve Sağ Eş",
+            "2. Zümre: Anne, Baba, Kardeşler ve Sağ Eş",
+            "3. Zümre: Büyük anne, Büyük baba ve Çocukları / Sağ Eş",
+            "Yalnızca Sağ Eş (Hiçbir zümre akrabası yok)"
+        ]
+    )
+    sag_es = st.checkbox("Sağ Eş Hayatta mı?", value=True)
 
-        cocuk_sayisi = 1
-        if "1. Zümre" in zumre_secimi:
-            cocuk_sayisi = st.number_input("Toplam Çocuk (Kök) Sayısı:", min_value=1, max_value=10, value=2, step=1)
-            
-            st.markdown("---")
-            st.markdown("### 👶 Çocukların Durumu (Vefat Edenler İçin Torun Temsili)")
-            cocuk_durumlari = []
-            for i in range(1, int(cocuk_sayisi) + 1):
-                c_durum = st.selectbox(f"{i}. Çocuğun Durumu:", ["Hayatta", "Vefat Etmiş (Torunlar Temsil Edecek)"], key=f"c_durum_{i}")
-                t_sayisi = 1
-                if c_durum == "Vefat Etmiş (Torunlar Temsil Edecek)":
-                    t_sayisi = st.number_input(f"→ {i}. Çocuğun Kaç Çocuğu (Torun) Var?", min_value=1, max_value=10, value=2, step=1, key=f"t_sayisi_{i}")
-                cocuk_durumlari.انياap({"durum": c_durum, "torun_sayisi": t_sayisi})
+    cocuk_durumlari = []
+    cocuk_sayisi = 1
+    
+    if "1. Zümre" in zumre_secimi:
+        cocuk_sayisi = st.number_input("Toplam Çocuk (Kök) Sayısı:", min_value=1, max_value=10, value=2, step=1)
+        
+        st.markdown("---")
+        st.markdown("### 👶 Çocukların Durumu (Vefat Edenler İçin Torun Temsili)")
+        for i in range(1, int(cocuk_sayisi) + 1):
+            c_durum = st.selectbox(f"{i}. Çocuğun Durumu:", ["Hayatta", "Vefat Etmiş (Torunlar Temsil Edecek)"], key=f"c_durum_{i}")
+            t_sayisi = 1
+            if c_durum == "Vefat Etmiş (Torunlar Temsil Edecek)":
+                t_sayisi = st.number_input(f"→ {i}. Çocuğun Kaç Çocuğu (Torun) Var?", min_value=1, max_value=10, value=2, step=1, key=f"t_sayisi_{i}")
+            cocuk_durumlari.append({"durum": c_durum, "torun_sayisi": t_sayisi})
 
-        submit_btn = st.form_submit_button("Zümre ve Temsil Paylaşımını Hesapla")
-
-    if submit_btn:
+    if st.button("Zümre ve Temsil Paylaşımını Hesapla"):
         sonuclar = []
         if "1. Zümre" in zumre_secimi:
             es_payi_orani = 0.25 if sag_es else 0.0
