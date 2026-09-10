@@ -11,7 +11,7 @@ st.set_page_config(
 # --- BASİT OTURUM / ŞİFRE KONTROLÜ ---
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "ege12345":
+        if st.session_state["password"] == "tmk2026":
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -32,25 +32,22 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- ANA UYGULAMA ---
+# --- ANA BAŞLIK ---
 st.title("⚖️ Türk Medeni Kanunu Profesyonel Miras & Mali Tasfiye Sistemi")
-st.markdown("Bu sistem; **Aktif-Pasif Tereke Tespiti**, Zümre/Torun Temsil Payları, Mal Rejimi Tasfiyesi ve Masraf Düşüm Hesaplamalarını kapsamlı olarak yürütür.")
+st.markdown("Bu araç; varlık-borç analizinden zümre paylaşımlarına, mal rejimi tasfiyesinden tapu masraflarına kadar süreci **adım adım ve kolayca** yönetmenizi sağlar.")
 
-st.sidebar.header("🗂️ Modül Seçimi")
-islem_turu = st.sidebar.selectbox(
-    "Gelişmiş Modül Seçin:",
-    [
-        "1. Modül: Aktif / Pasif (Net Tereke ve Borç) Analizi",
-        "2. Modül: Zümre Bazlı Yasal Miras ve Saklı Paylar", 
-        "3. Modül: Edinilmiş Mallara Katılma Rejimi Tasfiyesi", 
-        "4. Modül: Tapu İntikal ve Masraf Düşüm Hesabı"
-    ]
-)
+# --- MODERN SEKME (TAB) YAPISI İLE KOLAY ARAYÜZ ---
+tab1, tab2, tab3, tab4 = st.tabs([
+    "1️⃣ Aktif & Borç Analizi", 
+    "2️⃣ Zümre & Miras Paylaşımı", 
+    "3️⃣ Mal Rejimi Tasfiyesi", 
+    "4️⃣ Tapu ve Masraf Düşümleri"
+])
 
-# --- 1. MODÜL: AKTİF / PASİF (NET TEREKE) ANALİZİ ---
-if islem_turu == "1. Modül: Aktif / Pasif (Net Tereke ve Borç) Analizi":
-    st.header("💼 Adım 1: Tereke Aktifleri ve Borçlarının (Pasiflerin) Tespiti")
-    st.markdown("Türk Medeni Kanunu gereğince mirasçılara geçecek olan değer, brüt varlıklardan murisin borçları, cenaze masrafları ve tereke yönetim giderleri çıktıktan sonra kalan **Net Tereke** değeridir.")
+# --- TAB 1: AKTİF / PASİF (NET TEREKE) ANALİZİ ---
+with tab1:
+    st.header("💼 Adım 1: Tereke Varlıkları ve Borçlarının Tespiti")
+    st.markdown("Mirasbırakanın tüm varlıklarını ve borçlarını girerek paylaşılacak **Net Tereke** tutarını belirleyin.")
 
     col_ap1, col_ap2 = st.columns(2)
     
@@ -68,34 +65,28 @@ if islem_turu == "1. Modül: Aktif / Pasif (Net Tereke ve Borç) Analizi":
         cenaze_masrafi = st.number_input("Cenaze ve Defin Masrafları (TMK m.507) (TL):", min_value=0.0, value=75000.0, step=5000.0, key="c_masraf")
         tereke_yonetim_gideri = st.number_input("Terekenin Mühürlenmesi ve Yönetim Giderleri (TL):", min_value=0.0, value=25000.0, step=5000.0, key="t_gider")
 
-    if st.button("Net Terekeyi Hesapla ve Kaydet"):
+    if st.button("Net Terekeyi Hesapla ve Hafızaya Al", type="primary"):
         toplam_aktif = gayrimenkul_aktif + nakit_aktif + arac_aktif + diger_aktif
         toplam_pasif = banka_kredi_borcu + piyasa_borcu + cenaze_masrafi + tereke_yonetim_gideri
         net_tereke = max(0.0, toplam_aktif - toplam_pasif)
 
-        # Oturumda saklayalım ki diğer modüller bu net terekeyi otomatik kullanabilsin
         st.session_state["net_tereke"] = net_tereke
-        st.session_state["toplam_aktif"] = toplam_aktif
-        st.session_state["toplam_pasif"] = toplam_pasif
+        st.session_state["gayrimenkul_degeri"] = gayrimenkul_aktif # Tapu sekmesi için otomatik aktarım
 
-        st.success("✅ Net Tereke başarıyla hesaplandı ve sistem hafızasına kaydedildi!")
+        st.success("✅ Net Tereke başarıyla hesaplandı! Artık diğer sekmelere geçebilirsiniz.")
         
         st.markdown("---")
         col_s1, col_s2, col_s3 = st.columns(3)
         col_s1.metric("Toplam Brüt Aktif", f"{toplam_aktif:,.2f} TL")
         col_s2.metric("Toplam Pasif (Borçlar)", f"{toplam_pasif:,.2f} TL")
-        col_s3.metric("Net Tereke (Paylaşılacak Tutar)", f"{net_tereke:,.2f} TL", delta=f"-{toplam_pasif:,.2f} TL Borç Düşüldü")
+        col_s3.metric("Net Tereke", f"{net_tereke:,.2f} TL")
 
-        if net_tereke == 0.0:
-            st.warning("⚠️ Dikkat: Tereke pasif borçlara batıktır (Borca batık tereke). Mirasın hükmen veya resmi olarak reddi durumları gündeme gelebilir.")
-
-# --- 2. MODÜL: ZÜMRE BAZLI YASAL MİRAS VE SAKLI PAYLAR ---
-elif islem_turu == "2. Modül: Zümre Bazlı Yasal Miras ve Saklı Paylar":
-    st.header("👥 Kapsamlı Zümre, Altsoy ve Torun Temsil Hesaplayıcı")
+# --- TAB 2: ZÜMRE BAZLI YASAL MİRAS VE SAKLI PAYLAR ---
+with tab2:
+    st.header("👥 Adım 2: Zümre, Altsoy ve Torun Temsil Hesaplayıcı")
     
-    # Varsayılan değer olarak 1. modülden gelen net terekeyi alalım
     varsayilan_tereke = st.session_state.get("net_tereke", 3500000.0)
-    tereke_degeri = st.number_input("Paylaştırılacak Net Tereke Aktifi (TL):", min_value=0.0, value=varsayilan_tereke, step=50000.0, help="1. Modülden hesaplanan net tereke buraya otomatik yansıtılır.")
+    tereke_degeri = st.number_input("Paylaştırılacak Net Tereke Aktifi (TL):", min_value=0.0, value=varsayilan_tereke, step=50000.0, help="1. Adımdaki net tereke buraya otomatik gelir, dilerseniz değiştirebilirsiniz.")
     
     zumre_secimi = st.selectbox(
         "Mirasçının Bulunduğu Zümre / Durum:",
@@ -106,24 +97,24 @@ elif islem_turu == "2. Modül: Zümre Bazlı Yasal Miras ve Saklı Paylar":
             "Yalnızca Sağ Eş (Hiçbir zümre akrabası yok)"
         ]
     )
-    sag_es = st.checkbox("Sağ Eş Hayatta mı?", value=True)
+    sag_es = st.checkbox("Sağ Eş Hayatta mı?", value=True, key="sag_es_t2")
 
     cocuk_durumlari = []
     cocuk_sayisi = 1
     
     if "1. Zümre" in zumre_secimi:
-        cocuk_sayisi = st.number_input("Toplam Çocuk (Kök) Sayısı:", min_value=1, max_value=10, value=2, step=1)
+        cocuk_sayisi = st.number_input("Toplam Çocuk (Kök) Sayısı:", min_value=1, max_value=10, value=2, step=1, key="c_sayisi_t2")
         
         st.markdown("---")
         st.markdown("### 👶 Çocukların Durumu (Vefat Edenler İçin Torun Temsili)")
         for i in range(1, int(cocuk_sayisi) + 1):
-            c_durum = st.selectbox(f"{i}. Çocuğun Durumu:", ["Hayatta", "Vefat Etmiş (Torunlar Temsil Edecek)"], key=f"c_durum_{i}")
+            c_durum = st.selectbox(f"{i}. Çocuğun Durumu:", ["Hayatta", "Vefat Etmiş (Torunlar Temsil Edecek)"], key=f"c_durum_t2_{i}")
             t_sayisi = 1
             if c_durum == "Vefat Etmiş (Torunlar Temsil Edecek)":
-                t_sayisi = st.number_input(f"→ {i}. Çocuğun Kaç Çocuğu (Torun) Var?", min_value=1, max_value=10, value=2, step=1, key=f"t_sayisi_{i}")
+                t_sayisi = st.number_input(f"→ {i}. Çocuğun Kaç Çocuğu (Torun) Var?", min_value=1, max_value=10, value=2, step=1, key=f"t_sayisi_t2_{i}")
             cocuk_durumlari.append({"durum": c_durum, "torun_sayisi": t_sayisi})
 
-    if st.button("Zümre ve Temsil Paylaşımını Hesapla"):
+    if st.button("Miras Paylaşımını Hesapla", type="primary", key="btn_zumre"):
         sonuclar = []
         if "1. Zümre" in zumre_secimi:
             altsoy_toplam_oran = 0.75 if sag_es else 1.0
@@ -172,9 +163,9 @@ elif islem_turu == "2. Modül: Zümre Bazlı Yasal Miras ve Saklı Paylar":
             df_sonuc = pd.DataFrame(sonuclar)
             st.dataframe(df_sonuc, use_container_width=True)
 
-# --- 3. MODÜL: EDİNİLMİŞ MALLARA KATILMA REJİMİ TASFİYESİ ---
-elif islem_turu == "3. Modül: Edinilmiş Mallara Katılma Rejimi Tasfiyesi":
-    st.header("💍 Mal Rejimi Tasfiyesi (Artık Değer Hesabı)")
+# --- TAB 3: EDİNİLMİŞ MALLARA KATILMA REJİMİ TASFİYESİ ---
+with tab3:
+    st.header("💍 Adım 3: Mal Rejimi Tasfiyesi (Artık Değer Hesabı)")
     col_e1, col_e2 = st.columns(2)
     with col_e1:
         aktif_1 = st.number_input("Eş 1 Mal Varlığı Aktifi", min_value=0.0, value=2000000.0, key="a1")
@@ -185,30 +176,32 @@ elif islem_turu == "3. Modül: Edinilmiş Mallara Katılma Rejimi Tasfiyesi":
         borc_2 = st.number_input("Eş 2 Borçları", min_value=0.0, value=100000.0, key="b2")
         kisisel_2 = st.number_input("Eş 2 Kişisel Malları", min_value=0.0, value=200000.0, key="k2")
 
-    if st.button("Tasfiye Hesapla"):
+    if st.button("Tasfiye Hesapla", type="primary", key="btn_tasfiye"):
         ad1 = max(0.0, aktif_1 - borc_1 - kisisel_1)
         ad2 = max(0.0, aktif_2 - borc_2 - kisisel_2)
         toplam_artik = ad1 + ad2
         katilma = toplam_artik / 2
         st.success(f"💰 Toplam Artık Değer: {toplam_artik:,.2f} TL | Eşlerin Katılma Alacağı: {katilma:,.2f} TL")
 
-# --- 4. MODÜL: TAPU İNTİKAL VE MASRAF DÜŞÜM HESABI ---
-elif islem_turu == "4. Modül: Tapu İntikal ve Masraf Düşüm Hesabı":
-    st.header("🏛️ Tapu İntikal Harçları ve Masrafların Paylardan Düşülmesi")
+# --- TAB 4: TAPU İNTİKAL VE MASRAF DÜŞÜM HESABI ---
+with tab4:
+    st.header("🏛️ Adım 4: Tapu İntikal Harçları ve Masrafların Paylardan Düşülmesi")
+    
+    varsayilan_gayrimenkul = st.session_state.get("gayrimenkul_degeri", 3000000.0)
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        gayrimenkul_degeri = st.number_input("Tapu / Gayrimenkul Toplam Değeri (TL):", min_value=0.0, value=3000000.0, step=100000.0)
-        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01)
-        doner_serg = st.number_input("Tapu Döner Sermaye / Ek Masraflar (TL):", min_value=0.0, value=1350.0, step=100.0)
+        gayrimenkul_degeri = st.number_input("Tapu / Gayrimenkul Toplam Değeri (TL):", min_value=0.0, value=varsayilan_gayrimenkul, step=100000.0, key="g_deger_t4")
+        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01, key="int_oran_t4")
+        doner_serg = st.number_input("Tapu Döner Sermaye / Ek Masraflar (TL):", min_value=0.0, value=1350.0, step=100.0, key="doner_t4")
     
     with col_m2:
         st.markdown("### 📋 Mirasçı Dağılım Parametreleri")
-        mirasci_tipi = st.selectbox("Miras Grubu:", ["1. Zümre (Eş + Çocuklar/Torunlar)", "Yalnızca Çocuklar (Eş Yok)"])
-        toplam_cocuk = st.number_input("Çocuk / Kök Sayısı:", min_value=1, value=2, step=1)
+        mirasci_tipi = st.selectbox("Miras Grubu:", ["1. Zümre (Eş + Çocuklar/Torunlar)", "Yalnızca Çocuklar (Eş Yok)"], key="m_tip_t4")
+        toplam_cocuk = st.number_input("Çocuk / Kök Sayısı:", min_value=1, value=2, step=1, key="c_say_t4")
         var_es = True if "Eş +" in mirasci_tipi else False
 
-    if st.button("Masrafları Düşerek Net Payları Hesapla"):
+    if st.button("Masrafları Düşerek Net Payları Hesapla", type="primary", key="btn_tapu"):
         toplam_tapu_harci = gayrimenkul_degeri * (intikal_orani / 100.0)
         toplam_resmi_masraf = toplam_tapu_harci + doner_serg
         
