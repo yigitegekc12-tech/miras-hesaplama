@@ -662,3 +662,77 @@ with tabs[7]:
         st.session_state["audit_trail"] = []
         st.success("Denetim geçmişi güvenli bir şekilde sıfırlandı.")
         st.rerun()
+        # ==========================================
+# TAB 9: ⏳ ZAMANAŞIMI VE HAK DÜŞÜRÜCÜ SÜRE TAKİBİ
+# ==========================================
+with tabs[8]:
+    st.markdown("### ⏳ Modül 9: Zamanaşımı ve Hak Düşürücü Süre Takip Paneli")
+    st.write("Türk Medeni Kanunu hükümleri doğrultusunda mirasın reddi, mal rejimi tasfiyesi ve tenkis davaları için kritik yasal sürelerin takibi ve kalan gün hesaplaması.")
+
+    col_z1, col_z2 = st.columns(2)
+    with col_z1:
+        olum_tarihi = st.date_input("Ölüm / Tasfiye Başlangıç Tarihi", value=datetime.now().date(), key="z_olum_tarihi")
+        ogrenme_tarihi = st.date_input("İhlal / Vasiyetname / Tasarrufun Öğrenildiği Tarih", value=datetime.now().date(), key="z_ogrenme_tarihi")
+    with col_z2:
+        st.info("ℹ️ Bu tarihler, TMK m. 606 (Red), m. 178 (Mal Rejimi) ve m. 571 (Tenkis) maddelerindeki yasal süreleri hesaplamak için baz alınır.")
+
+    if st.button("Süreleri Hesapla ve Durumları Denetle", key="btn_hesapla_zamansimi"):
+        bugun = datetime.now().date()
+        
+        # 1. Mirasın Reddi Süresi (Ölüm tarihinden itibaren 3 ay / ~90 gün)
+        ret_son_tarih = olum_tarihi + timedelta(days=90)
+        ret_kalan_gun = (ret_son_tarih - bugun).days
+        
+        # 2. Mal Rejimi Tasfiyesi (Ölüm/Boşanma sonrası 10 yıllık genel zamanaşımı)
+        mal_rejimi_son_tarih = olum_tarihi.replace(year=olum_tarihi.year + 10) if olum_tarihi.month != 2 or olum_tarihi.day != 29 else olum_tarihi.replace(year=olum_tarihi.year + 10, day=28)
+        mal_rejimi_kalan_gun = (mal_rejimi_son_tarih - bugun).days
+
+        # 3. Tenkis Davası (Öğrenmeden itibaren 1 yıl / ~365 gün)
+        tenkis_1yil_son_tarih = ogrenme_tarihi + timedelta(days=365)
+        tenkis_1yil_kalan_gun = (tenkis_1yil_son_tarih - bugun).days
+
+        # 4. Tenkis Kesin Hak Düşürücü Süre (Ölüm tarihinden itibaren 10 yıl)
+        tenkis_10yil_son_tarih = olum_tarihi.replace(year=olum_tarihi.year + 10) if olum_tarihi.month != 2 or olum_tarihi.day != 29 else olum_tarihi.replace(year=olum_tarihi.year + 10, day=28)
+        tenkis_10yil_kalan_gun = (tenkis_10yil_son_tarih - bugun).days
+
+        z_sonuclar = [
+            {
+                "Dava / Hak Türü": "Mirasın Reddi (TMK m. 606)",
+                "Yasal Süre": "3 Ay",
+                "Son Tarih": ret_son_tarih.strftime('%d.%m.%Y'),
+                "Kalan Süre (Gün)": ret_kalan_gun,
+                "Durum": "🔴 Hak Düştü" if ret_kalan_gun < 0 else f"🟢 Aktif ({ret_kalan_gun} gün kaldı)"
+            },
+            {
+                "Dava / Hak Türü": "Mal Rejimi Tasfiyesi Alacağı (Genel)",
+                "Yasal Süre": "10 Yıl",
+                "Son Tarih": mal_rejimi_son_tarih.strftime('%d.%m.%Y'),
+                "Kalan Süre (Gün)": mal_rejimi_kalan_gun,
+                "Durum": "🔴 Zamanaşımına Uğradı" if mal_rejimi_kalan_gun < 0 else f"🟢 Aktif ({mal_rejimi_kalan_gun} gün kaldı)"
+            },
+            {
+                "Dava / Hak Türü": "Tenkis Davası (Öğrenmeden İtibaren)",
+                "Yasal Süre": "1 Yıl",
+                "Son Tarih": tenkis_1yil_son_tarih.strftime('%d.%m.%Y'),
+                "Kalan Süre (Gün)": tenkis_1yil_kalan_gun,
+                "Durum": "🔴 Süre Doldu" if tenkis_1yil_kalan_gun < 0 else f"🟢 Aktif ({tenkis_1yil_kalan_gun} gün kaldı)"
+            },
+            {
+                "Dava / Hak Türü": "Tenkis Davası (Mutlak/10 Yıl)",
+                "Yasal Süre": "10 Yıl",
+                "Son Tarih": tenkis_10yil_son_tarih.strftime('%d.%m.%Y'),
+                "Kalan Süre (Gün)": tenkis_10yil_kalan_gun,
+                "Durum": "🔴 Süre Doldu" if tenkis_10yil_kalan_gun < 0 else f"🟢 Aktif ({tenkis_10yil_kalan_gun} gün kaldı)"
+            }
+        ]
+
+        df_z = pd.DataFrame(z_sonuclar)
+        st.dataframe(df_z, use_container_width=True)
+
+        # Audit Trail kaydı ekleme
+        if "audit_trail" in st.session_state:
+            st.session_state["audit_trail"].append({
+                "Zaman": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "İşlem": "Zamanaşımı ve Hak Düşürücü Süre Analizi",
+                "Detay": f"Ölüm: {olum_tarihi}, Öğrenme: {ogrenme_tarihi} baz alınarak hesaplandı."
+            })
