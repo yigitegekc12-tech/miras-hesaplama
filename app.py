@@ -34,12 +34,16 @@ if not check_password():
 
 # --- ANA UYGULAMA ---
 st.title("⚖️ Türk Medeni Kanunu (TMK) Miras & Mal Rejimi Hesaplama")
-st.markdown("Bu araç; yasal miras payları, saklı paylar, mal rejimi tasfiyesi, tapu harçları ve **torunlar/altsoy temsil ilkelerini** hesaplar.")
+st.markdown("Bu araç; yasal miras payları, saklı paylar, torun temsil ilkeleri ve **masrafların mirasçı paylarından otomatik düşüldüğü** net intikal hesaplamalarını yapar.")
 
 st.sidebar.header("🗂️ İşlem Seçimi")
 islem_turu = st.sidebar.selectbox(
     "Hesaplama Modülü Seçin:",
-    ["Zümre Bazlı Yasal Miras ve Saklı Paylar", "Edinilmiş Mallara Katılma Rejimi Tasfiyesi", "Tapu Harçları ve Devir Masrafları Hesaplama"]
+    [
+        "Zümre Bazlı Yasal Miras ve Saklı Paylar", 
+        "Edinilmiş Mallara Katılma Rejimi Tasfiyesi", 
+        "Tapu İntikal ve Masraf Düşüm Hesabı"
+    ]
 )
 
 if islem_turu == "Zümre Bazlı Yasal Miras ve Saklı Paylar":
@@ -75,7 +79,6 @@ if islem_turu == "Zümre Bazlı Yasal Miras ve Saklı Paylar":
     if st.button("Zümre ve Temsil Paylaşımını Hesapla"):
         sonuclar = []
         if "1. Zümre" in zumre_secimi:
-            es_payi_orani = 0.25 if sag_es else 0.0
             altsoy_toplam_oran = 0.75 if sag_es else 1.0
             
             if sag_es:
@@ -83,7 +86,7 @@ if islem_turu == "Zümre Bazlı Yasal Miras ve Saklı Paylar":
                     "Mirasçı": "Sağ Eş", 
                     "Yasal Pay Oranı": "%25.00 (1/4)", 
                     "Tutar (TL)": tereke_degeri * 0.25, 
-                    "Saklı Pay Oranı": "%12.50 (Yasal payın yarısı)"
+                    "Saklı Pay Oranı": "%12.50"
                 })
 
             her_bir_kok_orani = altsoy_toplam_oran / cocuk_sayisi
@@ -141,12 +144,74 @@ elif islem_turu == "Edinilmiş Mallara Katılma Rejimi Tasfiyesi":
         katilma = toplam_artik / 2
         st.success(f"💰 Toplam Artık Değer: {toplam_artik:,.2f} TL | Eşlerin Katılma Alacağı: {katilma:,.2f} TL")
 
-elif islem_turu == "Tapu Harçları ve Devir Masrafları Hesaplama":
-    st.header("🏛️ Tapu Harçları ve Devir Masrafları")
-    gayrimenkul_degeri = st.number_input("Gayrimenkul Değeri (TL):", min_value=0.0, value=2500000.0)
-    islem_tipi = st.selectbox("İşlem Türü:", ["Miras İntikal İşlemi", "Mal Rejimi Tasfiyesi Eş Devri", "Normal Satış"])
+elif islem_turu == "Tapu İntikal ve Masraf Düşüm Hesabı":
+    st.header("🏛️ Tapu İntikal Harçları ve Masrafların Paylardan Düşülmesi")
+    st.markdown("Bu modül; intikal harcı, döner sermaye ve diğer resmi masrafları toplam tereke üzerinden hesaplayıp **tüm mirasçıların payından oranları doğrultusunda otomatik olarak düşer**.")
+
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        gayrimenkul_degeri = st.number_input("Tapu / Gayrimenkul Toplam Değeri (TL):", min_value=0.0, value=3000000.0, step=100000.0)
+        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01, help="Miras intikallerinde binde 2.27 (%0.227) uygulanır.")
+        doner_serg = st.number_input("Tapu Döner Sermaye / Ek Masraflar (TL):", min_value=0.0, value=1350.0, step=100.0)
     
-    if st.button("Masraf Hesapla"):
-        harc = gayrimenkul_degeri * (0.00227 if "İntikal" in islem_tipi or "Tasfiye" in islem_tipi else 0.04)
-        toplam = harc + 1350.0
-        st.success(f"Devlete Ödenecek Toplam Masraf: {toplam:,.2f} TL (Harç: {harc:,.2f} TL + Döner Sermaye: 1,350 TL)")
+    with col_m2:
+        st.markdown("### 📋 Mirasçı Dağılım Parametreleri")
+        mirasci_tipi = st.selectbox("Miras Grubu:", ["1. Zümre (Eş + Çocuklar/Torunlar)", "Yalnızca Çocuklar (Eş Yok)"])
+        toplam_cocuk = st.number_input("Çocuk / Kök Sayısı:", min_value=1, value=2, step=1)
+        var_es = True if "Eş +" in mirasci_tipi else False
+
+    if st.button("Masrafları Düşerek Net Payları Hesapla"):
+        # Toplam Resmi Masraf Tutarı
+        toplam_tapu_harci = gayrimenkul_degeri * (intikal_orani / 100.0)
+        toplam_resmi_masraf = toplam_tapu_harci + doner_serg
+        
+        # Miras pay oranlarının tespiti
+        detaylar = []
+        if var_es:
+            es_pay_orani = 0.25
+            cocuklar_toplam_oran = 0.75
+            
+            # Sağ eş hak edişleri
+            brut_es = gayrimenkul_degeri * es_pay_orani
+            masraf_es = toplam_resmi_masraf * es_pay_orani
+            net_es = brut_es - masraf_es
+            
+            detaylar.append({
+                "Mirasçı": "Sağ Eş",
+                "Yasal Payı (%)": "%25.00",
+                "Brüt Pay (TL)": brut_es,
+                "Payına Düşen Masraf (TL)": masraf_es,
+                "Net Alacağı (TL)": net_es
+            })
+            
+            her_cocuk_orani = cocuklar_toplam_oran / toplam_cocuk
+            for c in range(1, int(toplam_cocuk) + 1):
+                brut_c = gayrimenkul_degeri * her_cocuk_orani
+                masraf_c = toplam_resmi_masraf * her_cocuk_orani
+                net_c = brut_c - masraf_c
+                detaylar.append({
+                    "Mirasçı": f"{c}. Çocuk",
+                    "Yasal Payı (%)": f"%{her_cocuk_orani * 100:.2f}",
+                    "Brüt Pay (TL)": brut_c,
+                    "Payına Düşen Masraf (TL)": masraf_c,
+                    "Net Alacağı (TL)": net_c
+                })
+        else:
+            her_cocuk_orani = 1.0 / toplam_cocuk
+            for c in range(1, int(toplam_cocuk) + 1):
+                brut_c = gayrimenkul_degeri * her_cocuk_orani
+                masraf_c = toplam_resmi_masraf * her_cocuk_orani
+                net_c = brut_c - masraf_c
+                detaylar.append({
+                    "Mirasçı": f"{c}. Çocuk",
+                    "Yasal Payı (%)": f"%{her_cocuk_orani * 100:.2f}",
+                    "Brüt Pay (TL)": brut_c,
+                    "Payına Düşen Masraf (TL)": masraf_c,
+                    "Net Alacağı (TL)": net_c
+                })
+
+        st.info(f"💡 **Toplam Tahsil Edilecek Devlet Masrafı:** {toplam_resmi_masraf:,.2f} TL (İntikal Harcı: {toplam_tapu_harci:,.2f} TL + Döner Sermaye: {doner_serg:,.2f} TL)")
+        
+        st.subheader("📉 Masrafların Otomatik Düşüldüğü Net Mirasçı Dağılım Tablosu")
+        df_net = pd.DataFrame(detaylar)
+        st.dataframe(df_net, use_container_width=True)
