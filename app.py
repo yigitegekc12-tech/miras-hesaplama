@@ -38,15 +38,16 @@ if not check_password():
 
 # --- ANA BAŞLIK ---
 st.title("⚖️ Türk Medeni Kanunu Profesyonel Miras & Mali Tasfiye Sistemi")
-st.markdown("Bu araç; varlık-borç analizinden zümre paylaşımlarına, tapu masraflarından **büyük puntolu, çok sayfalı profesyonel Excel raporlarına** kadar kurumsal çözümler sunar.")
+st.markdown("Bu araç; varlık-borç analizinden zümre paylaşımlarına, **tenkis hesaplamalarından** tapu masraflarına ve büyük puntolu profesyonel Excel raporlarına kadar kurumsal çözümler sunar.")
 
 # --- MODERN SEKME (TAB) YAPISI ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1️⃣ Aktif & Borç Analizi", 
     "2️⃣ Zümre & Miras Paylaşımı", 
     "3️⃣ Mal Rejimi Tasfiyesi", 
-    "4️⃣ Tapu ve Masraf Düşümleri",
-    "5️⃣ 📊 Kapsamlı Rapor ve Dışa Aktarım"
+    "4️⃣ Tenkis (Saklı Pay İhlali) Hesabı",
+    "5️⃣ Tapu ve Masraf Düşümleri",
+    "6️⃣ 📊 Kapsamlı Rapor ve Dışa Aktarım"
 ])
 
 # --- TAB 1: AKTİF / PASİF (NET TEREKE) ANALİZİ ---
@@ -89,7 +90,7 @@ with tab1:
 with tab2:
     st.header("👥 Adım 2: Zümre, Altsoy ve Torun Temsil Hesaplayıcı")
     varsayilan_tereke = st.session_state.get("net_tereke", 3500000.0)
-    tereke_degeri = st.number_input("Paylaştırılacak Net Tereke Aktifi (TL):", min_value=0.0, value=varsayilan_tereke, step=50000.0)
+    tereke_degeri = st.number_input("Paylaştırılacak Net Tereke Aktifi (TL):", min_value=0.0, value=varsayilan_tereke, step=50000.0, key="t_deger_t2")
     
     zumre_secimi = st.selectbox(
         "Mirasçının Bulunduğu Zümre / Durum:",
@@ -168,20 +169,90 @@ with tab3:
         st.session_state["mal_rejimi_sonuc"] = f"Toplam Artık Değer: {toplam_artik:,.2f} TL | Eşlerin Katılma Alacağı: {katilma:,.2f} TL"
         st.success(st.session_state["mal_rejimi_sonuc"])
 
-# --- TAB 4: TAPU İNTİKAL VE MASRAF DÜŞÜM HESABI ---
+# --- TAB 4: TENKİS (SAKLI PAY İHLALİ) HESABI ---
 with tab4:
-    st.header("🏛️ Adım 4: Tapu İntikal Harçları ve Masrafların Paylardan Düşülmesi")
+    st.header("📜 Adım 4: Vasiyetname ve Saklı Pay İhlali (Tenkis) Analizi")
+    st.markdown("Mirasbırakanın yasal saklı payları aşarak yaptığı kazandırmaların (vasiyetname / bağışlar) tenkise (indirime) tabi olup olmadığını hesaplayın.")
+    
+    base_tereke = st.session_state.get("net_tereke", 3500000.0)
+    col_t1, col_t2 = st.columns(2)
+    
+    with col_t1:
+        net_tereke_t4 = st.number_input("Net Tereke Değeri (TL):", min_value=0.0, value=base_tereke, step=50000.0, key="net_t_t4")
+        tenkise_tabi_kazandirma = st.number_input("Üçüncü Kişilere Yapılan Vasiyet / Karşılıksız Kazandırma Tutarı (TL):", min_value=0.0, value=1000000.0, step=50000.0, key="kazandirma_t4")
+    
+    with col_t2:
+        mirasci_durumu_t4 = st.selectbox(
+            "Saklı Pay Sahibi Miras Grubu:",
+            [
+                "Altsoy (Çocuklar) ve Sağ Eş Var",
+                "Yalnızca Altsoy (Çocuklar) Var (Eş Yok)",
+                "Anne ve Baba Var (Altsoy ve Eş Yok)"
+            ],
+            key="m_durum_t4"
+        )
+        toplam_cocuk_t4 = st.number_input("Çocuk / Kök Sayısı:", min_value=1, value=2, step=1, key="c_say_t4")
+
+    if st.button("Tenkis (Saklı Pay İhlali) Hesabını Çalıştır", type="primary", key="btn_tenkis_calistir"):
+        # Hesaplama Terekkesi = Net Tereke + Tenkise Tabi Kazandırmalar (TMK m.506)
+        hesaplama_terekkesi = net_tereke_t4 + tenkise_tabi_kazandirma
+        
+        # Tasarruf Edilebilir Kısım ve Saklı Pay Oranları Tespiti
+        if "Altsoy (Çocuklar) ve Sağ Eş Var" in mirasci_durumu_t4:
+            # Altsoy ve eş varsa tasarruf edilebilir kısım 1/4'tür (Kalan 3/4 saklı paylar toplamıdır: Eş 1/4, Altsoy 1/2)
+            tasarruf_orani = 0.25
+            sakli_paylar_toplam_orani = 0.75
+        elif "Yalnızca Altsoy (Çocuklar) Var" in mirasci_durumu_t4:
+            # Sadece altsoy varsa tasarruf edilebilir kısım 1/2'dir
+            tasarruf_orani = 0.50
+            sakli_paylar_toplam_orani = 0.50
+        else:
+            # Anne baba varsa tasarruf edilebilir kısım 1/2'dir
+            tasarruf_orani = 0.50
+            sakli_paylar_toplam_orani = 0.50
+
+        tasarruf_edilebilir_kisim = hesaplama_terekkesi * tasarruf_orani
+        toplam_sakli_pay = hesaplama_terekkesi * sakli_paylar_toplam_orani
+        
+        # Aşım / İhlal Tutarı (Tenkise Tabi Tutar)
+        # Eğer yapılan kazandırma tasarruf edilebilir kısmı aşıyorsa, aşan miktar tenkise tabidir.
+        asir_kazandirma = max(0.0, tenkise_tabi_kazandirma - tasarruf_edilebilir_kisim)
+        ihlal_var_mi = asir_kazandirma > 0
+
+        tenkis_sonuclar = [
+            {"Tenkis / Analiz Kalemi": "Hesaplama Terekkesi (Net Tereke + Kazandırmalar)", "Tutar (TL)": hesaplama_terekkesi},
+            {"Tenkis / Analiz Kalemi": "Tasarruf Edilebilir Kısım Sınırı", "Tutar (TL)": tasarruf_edilebilir_kisim},
+            {"Tenkis / Analiz Kalemi": "Yasal Mirasçıların Toplam Saklı Payı", "Tutar (TL)": toplam_sakli_pay},
+            {"Tenkis / Analiz Kalemi": "Yapılan Vasiyet / Bağış Toplamı", "Tutar (TL)": tenkise_tabi_kazandirma},
+            {"Tenkis / Analiz Kalemi": "Saklı Payları İhlal Eden Aşan Tutar (Tenkise Tabi Tutar)", "Tutar (TL)": asir_kazandirma}
+        ]
+        
+        df_tenkis = pd.DataFrame(tenkis_sonuclar)
+        st.session_state["df_tenkis_sonuc"] = df_tenkis
+        
+        st.markdown("---")
+        if ihlal_var_mi:
+            st.error(f"⚠️ **DİKKAT: Saklı Pay İhlali (Tenkis Sebebi) Var!** Yapılan kazandırmalar tasarruf edilebilir kısmı **{asir_kazandirma:,.2f} TL** aşmaktadır. Saklı pay sahipleri bu miktar için Tenkis Davası açabilir.")
+        else:
+            st.success("✅ **Saklı Pay İhlali Bulunmuyor.** Yapılan kazandırma tasarruf edilebilir kısım sınırları içindedir.")
+            
+        st.subheader("📊 Ayrıntılı Tenkis ve Tasarruf Sınırı Tablosu")
+        st.dataframe(df_tenkis, use_container_width=True)
+
+# --- TAB 5: TAPU İNTİKAL VE MASRAF DÜŞÜM HESABI ---
+with tab5:
+    st.header("🏛️ Adım 5: Tapu İntikal Harçları ve Masrafların Paylardan Düşülmesi")
     varsayilan_gayrimenkul = st.session_state.get("gayrimenkul_degeri", 3000000.0)
     
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        gayrimenkul_degeri = st.number_input("Tapu / Gayrimenkul Toplam Değeri (TL):", min_value=0.0, value=varsayilan_gayrimenkul, step=100000.0, key="g_deger_t4")
-        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01, key="int_oran_t4")
-        doner_serg = st.number_input("Tapu Döner Sermaye / Ek Masraflar (TL):", min_value=0.0, value=1350.0, step=100.0, key="doner_t4")
+        gayrimenkul_degeri = st.number_input("Tapu / Gayrimenkul Toplam Değeri (TL):", min_value=0.0, value=varsayilan_gayrimenkul, step=100000.0, key="g_deger_t5")
+        intikal_orani = st.number_input("Tapu İntikal Harcı Oranı (%):", min_value=0.0, value=0.227, step=0.01, key="int_oran_t5")
+        doner_serg = st.number_input("Tapu Döner Sermaye / Ek Masraflar (TL):", min_value=0.0, value=1350.0, step=100.0, key="doner_t5")
     
     with col_m2:
-        mirasci_tipi = st.selectbox("Miras Grubu:", ["1. Zümre (Eş + Çocuklar/Torunlar)", "Yalnızca Çocuklar (Eş Yok)"], key="m_tip_t4")
-        toplam_cocuk = st.number_input("Çocuk / Kök Sayısı:", min_value=1, value=2, step=1, key="c_say_t4")
+        mirasci_tipi = st.selectbox("Miras Grubu:", ["1. Zümre (Eş + Çocuklar/Torunlar)", "Yalnızca Çocuklar (Eş Yok)"], key="m_tip_t5")
+        toplam_cocuk = st.number_input("Çocuk / Kök Sayısı:", min_value=1, value=2, step=1, key="c_say_t5")
         var_es = True if "Eş +" in mirasci_tipi else False
 
     if st.button("Masrafları Düşerek Net Payları Hesapla", type="primary", key="btn_tapu"):
@@ -217,9 +288,9 @@ with tab4:
         st.subheader("📉 Masrafların Otomatik Düşüldüğü Net Mirasçı Dağılım Tablosu")
         st.dataframe(df_net, use_container_width=True)
 
-# --- TAB 5: 📊 KAPSAMLI RAPOR VE DIŞA AKTARIM (EXCEL / PDF) ---
-with tab5:
-    st.header("📊 Adım 5: Profesyonel Büyük Puntolu Çok Sayfalı Excel ve PDF Raporu")
+# --- TAB 6: 📊 KAPSAMLI RAPOR VE DIŞA AKTARIM (EXCEL / PDF) ---
+with tab6:
+    st.header("📊 Adım 6: Profesyonel Büyük Puntolu Çok Sayfalı Excel ve PDF Raporu")
     st.markdown("Sistem üzerindeki tüm verileri **büyük ve okunaklı yazı tipleri, kurumsal renkler ve otomatik genişletilmiş sütunlarla** biçimlendirilmiş olarak indirebilirsiniz.")
 
     col_dl1, col_dl2 = st.columns(2)
@@ -248,11 +319,17 @@ with tab5:
                 else:
                     pd.DataFrame({"Bilgi": ["Lütfen önce 2. Adımdan miras paylaşımını hesaplayın."]}).to_excel(writer, sheet_name='02_Miras_Paylari', index=False)
 
-                # 3. Sekme: Tapu Harçları ve Masraf Düşümleri
-                if "df_tapu_masraf" in st.session_state:
-                    st.session_state["df_tapu_masraf"].to_excel(writer, sheet_name='03_Tapu_Ve_Masraflar', index=False)
+                # 3. Sekme: Tenkis Hesaplamaları
+                if "df_tenkis_sonuc" in st.session_state:
+                    st.session_state["df_tenkis_sonuc"].to_excel(writer, sheet_name='03_Tenkis_Analizi', index=False)
                 else:
-                    pd.DataFrame({"Bilgi": ["Lütfen önce 4. Adımdan tapu masraflarını hesaplayın."]}).to_excel(writer, sheet_name='03_Tapu_Ve_Masraflar', index=False)
+                    pd.DataFrame({"Bilgi": ["Lütfen önce 4. Adımdan tenkis analizini çalıştırın."]}).to_excel(writer, sheet_name='03_Tenkis_Analizi', index=False)
+
+                # 4. Sekme: Tapu Harçları ve Masraf Düşümleri
+                if "df_tapu_masraf" in st.session_state:
+                    st.session_state["df_tapu_masraf"].to_excel(writer, sheet_name='04_Tapu_Ve_Masraflar', index=False)
+                else:
+                    pd.DataFrame({"Bilgi": ["Lütfen önce 5. Adımdan tapu masraflarını hesaplayın."]}).to_excel(writer, sheet_name='04_Tapu_Ve_Masraflar', index=False)
 
             # --- OPENPYXL İLE BÜYÜK FONT VE STİL UYGULAMA ---
             output.seek(0)
@@ -302,7 +379,7 @@ with tab5:
             st.download_button(
                 label="📁 Büyük Yazı Tipli Excel Dosyasını (.xlsx) İndir",
                 data=final_output,
-                file_name="TMK_Kapsamli_Büyük_Font_Miras_Raporu.xlsx",
+                file_name="TMK_Kapsamli_Buyuk_Font_Miras_Raporu.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
