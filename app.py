@@ -3,6 +3,7 @@ import pandas as pd
 import io
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
 
 # --- SAYFA YAPILANDIRMASI ---
 st.set_page_config(
@@ -255,7 +256,6 @@ with tab5:
 
             # --- OPENPYXL İLE BÜYÜK FONT VE STİL UYGULAMA ---
             output.seek(0)
-            from openpyxl import load_workbook
             wb = load_workbook(output)
             
             # Tasarım Stilleri
@@ -277,11 +277,9 @@ with tab5:
                     max_len = 0
                     col_letter = get_column_letter(col[0].column)
                     for cell in col:
-                        # Hücre değeri uzunluk hesabı
                         if cell.value is not None:
                             max_len = max(max_len, len(str(cell.value)))
                         
-                        # Hücre Stilleri (Başlık vs Veri)
                         if cell.row == 1:
                             cell.font = header_font
                             cell.fill = header_fill
@@ -293,12 +291,10 @@ with tab5:
                     
                     ws.column_dimensions[col_letter].width = max(max_len + 5, 22)
                 
-                # Satır Yükseklikleri (Büyük okunabilirlik için ferah görünüm)
                 ws.row_dimensions[1].height = 30
                 for r in range(2, ws.max_row + 1):
                     ws.row_dimensions[r].height = 24
 
-            # Belleğe tekrar kaydet
             final_output = io.BytesIO()
             wb.save(final_output)
             final_output.seek(0)
