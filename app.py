@@ -26,7 +26,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(formatter)
 logging.getLogger().addHandler(console_handler)
 
-# --- 2. SAYFA YAPILANDIRMASI ---
+# --- 2. SAYFA YAPILANDIRMASI VE GELİŞMİŞ KURUMSAL CSS ---
 st.set_page_config(
     page_title="TMK Kurumsal Enterprise Miras ve Mal Rejimi Tasfiye Sistemi",
     page_icon="⚖️",
@@ -34,13 +34,55 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Kurumsal Tema CSS Entegrasyonu
+# Gelişmiş Kurumsal Tema, Kartlar ve Tipografi CSS Entegrasyonu
 st.markdown("""
     <style>
-        .main { background-color: #f8f9fa; }
-        .stButton>button { width: 100%; border-radius: 4px; font-weight: 600; }
-        .metric-card { background-color: #ffffff; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .stAlert { border-radius: 4px; }
+        /* Genel Arka Plan ve Font */
+        .main { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        
+        /* Özel Kurumsal Kart Tasarımları */
+        .enterprise-card {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #1F4E78;
+            margin-bottom: 20px;
+        }
+        
+        .metric-container {
+            background: linear-gradient(135deg, #1F4E78 0%, #2c6cb0 100%);
+            color: white;
+            padding: 18px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        /* Buton Stilleri */
+        .stButton>button { 
+            width: 100%; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            background-color: #1F4E78; 
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .stButton>button:hover {
+            background-color: #163857;
+            border-color: #163857;
+        }
+        
+        /* Başlık Düzenlemeleri */
+        h1, h2, h3 { color: #1F4E78; font-weight: 700; }
+        
+        /* Sekme Güzelleştirmeleri */
+        .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 4px 4px 0px 0px;
+            padding: 10px 16px;
+            font-weight: 600;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -112,7 +154,7 @@ def enterprise_security_gateway():
             log_msg = f"Oturum kapatıldı: {st.session_state['current_user']}"
             logging.info(log_msg, extra={'session_id': st.session_state['session_id']})
             for key in list(st.session_state.keys()):
-                if key not in ["users_db"]: # Şifre değişikliklerinin kalıcı olması için users_db korunur
+                if key not in ["users_db"]: 
                     del st.session_state[key]
             st.rerun()
         return True
@@ -123,10 +165,12 @@ if not enterprise_security_gateway():
 # --- 4. SİSTEM BAŞLIĞI VE EXECUTIVE HEADER ---
 st.title("⚖️ TMK Kurumsal Enterprise Miras, Mal Rejimi ve Tasfiye Bilirkişilik Sistemi")
 st.markdown("""
-*Bu platform; Türk Medeni Kanunu'nun (TMK) miras hukuku (m. 495 vd.) ve mal rejimi hükümleri (m. 214 vd.) çerçevesinde; 
-aktif-pasif terekelerin tespiti, zümre/kök/temsil oranları, borçların orantısal tenkisi, edinilmiş mallara katılma tasfiyesi, 
-saklı pay ihlalleri (tenkis) ve tapu intikal harç hesaplamalarını kurumsal denetim standartlarında gerçekleştirir.*
-""")
+<div class="enterprise-card">
+    <b>Yasal Çerçeve & Kapsam:</b> Türk Medeni Kanunu'nun (TMK) miras hukuku (m. 495 vd.) ve mal rejimi hükümleri (m. 214 vd.) çerçevesinde; 
+    aktif-pasif terekelerin tespiti, zümre/kök/temsil oranları, borçların orantısal tenkisi, edinilmiş mallara katılma tasfiyesi, 
+    saklı pay ihlalleri (tenkis) ve tapu intikal harç hesaplamalarını kurumsal denetim standartlarında gerçekleştirir.
+</div>
+""", unsafe_allow_html=True)
 
 # --- 5. SEKMELER (TABS) YAPILANDIRMASI ---
 tabs = st.tabs([
@@ -144,12 +188,12 @@ tabs = st.tabs([
 # TAB 1: AKTİF & PASİF (NET TEREKE) ANALİZİ
 # ==========================================
 with tabs[0]:
-    st.header("💼 Modül 1: Kapsamlı Tereke Aktif ve Pasif Envanter Yönetimi")
-    st.markdown("Mirasbırakanın vefat anındaki tüm mal varlığı değerleri (menkul, gayrimenkul, ticari haklar) ile borç ve cenaze giderlerinin TMK m. 507 uyarınca tespiti.")
+    st.markdown("### 💼 Modül 1: Kapsamlı Tereke Aktif ve Pasif Envanter Yönetimi")
+    st.write("Mirasbırakanın vefat anındaki tüm mal varlığı değerleri ile borç ve cenaze giderlerinin TMK m. 507 uyarınca tespiti.")
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("📈 Tereke Aktif Kalemleri (Rayiç Değer)")
+        st.markdown("#### 📈 Tereke Aktif Kalemleri (Rayiç Değer)")
         g_aktif = st.number_input("Gayrimenkuller Toplam Rayiç Değeri (TL):", min_value=0.0, value=7500000.0, step=100000.0, format="%.2f", key="t1_g_aktif")
         n_aktif = st.number_input("Banka Mevduatı, Döviz ve Kıymetli Madenler (TL):", min_value=0.0, value=1250000.0, step=50000.0, format="%.2f", key="t1_n_aktif")
         a_aktif = st.number_input("Araç ve Motorlu Taşıtlar (TL):", min_value=0.0, value=1500000.0, step=25000.0, format="%.2f", key="t1_a_aktif")
@@ -157,7 +201,7 @@ with tabs[0]:
         d_aktif = st.number_input("Alacaklar, Senetler ve Diğer Menkul Kıymetler (TL):", min_value=0.0, value=250000.0, step=10000.0, format="%.2f", key="t1_d_aktif")
 
     with col2:
-        st.subheader("📉 Tereke Pasif Kalemleri (Borçlar ve Masraflar)")
+        st.markdown("#### 📉 Tereke Pasif Kalemleri (Borçlar ve Masraflar)")
         b_kredi = st.number_input("Banka Kredileri, Kredi Kartı ve Finansal Borçlar (TL):", min_value=0.0, value=600000.0, step=20000.0, format="%.2f", key="t1_b_kredi")
         p_borc = st.number_input("Piyasa / Senetli Ticari Borçlar (TL):", min_value=0.0, value=300000.0, step=10000.0, format="%.2f", key="t1_p_borc")
         v_borc = st.number_input("Vergi Daireleri ve SGK Borçları (TL):", min_value=0.0, value=150000.0, step=5000.0, format="%.2f", key="t1_v_borc")
@@ -189,8 +233,8 @@ with tabs[0]:
 # TAB 2: ZÜMRE & MİRAS PAYLAŞIMI
 # ==========================================
 with tabs[1]:
-    st.header("👥 Modül 2: Gelişmiş Zümre, Kök ve Temsil Sistemi (TMK m. 495-501)")
-    st.markdown("Yasal mirasçıların zümre sistemine göre pay oranlarının tespiti ve sağ eşin zümrelere göre entegre katılım payı hesaplaması.")
+    st.markdown("### 👥 Modül 2: Gelişmiş Zümre, Kök ve Temsil Sistemi (TMK m. 495-501)")
+    st.write("Yasal mirasçıların zümre sistemine göre pay oranlarının tespiti ve sağ eşin zümrelere göre entegre katılım payı hesaplaması.")
 
     default_tereke_t2 = st.session_state.get("net_tereke", 10250000.0)
     tereke_t2 = st.number_input("Paylaşıma Esas Net Tereke Değeri (TL):", min_value=0.0, value=default_tereke_t2, step=50000.0, format="%.2f", key="t2_tereke")
@@ -281,8 +325,8 @@ with tabs[1]:
 # TAB 3: BORÇLAR & NET ALACAKLAR
 # ==========================================
 with tabs[2]:
-    st.header("📋 Modül 3: Brüt Aktiften Borçların Orantısal Tenkisi ve Net Alacak Tablosu")
-    st.markdown("Mirasçılara düşen yasal paylar oranında tereke pasiflerinin (borçlar, masraflar) düşülmesi ve net tasfiye alacaklarının tespiti.")
+    st.markdown("### 📋 Modül 3: Brüt Aktiften Borçların Orantısal Tenkisi ve Net Alacak Tablosu")
+    st.write("Mirasçılara düşen yasal paylar oranında tereke pasiflerinin (borçlar, masraflar) düşülmesi ve net tasfiye alacaklarının tespiti.")
 
     brut_aktif_t3 = st.number_input("Toplam Brüt Varlık Değeri (TL):", min_value=0.0, value=st.session_state.get("toplam_aktif", 12300000.0), step=50000.0, format="%.2f", key="t3_brut")
     toplam_pasif_t3 = st.number_input("Toplam Tereke Borçları ve Pasifleri (TL):", min_value=0.0, value=st.session_state.get("toplam_pasif", 2050000.0), step=20000.0, format="%.2f", key="t3_pasif")
@@ -326,18 +370,18 @@ with tabs[2]:
 # TAB 4: MAL REJİMİ TASFİYESİ
 # ==========================================
 with tabs[3]:
-    st.header("💍 Modül 4: Edinilmiş Mallara Katılma Rejimi Tasfiyesi ve Artık Değer Hesabı (TMK m. 218 vd.)")
-    st.markdown("Eşlerin mal rejiminin sona ermesi anındaki malvarlıklarının tasfiyesi, kişisel mallar indirimi, artık değer ve katılma alacağı hesabı.")
+    st.markdown("### 💍 Modül 4: Edinilmiş Mallara Katılma Rejimi Tasfiyesi ve Artık Değer Hesabı (TMK m. 218 vd.)")
+    st.write("Eşlerin mal rejiminin sona ermesi anındaki malvarlıklarının tasfiyesi, kişisel mallar indirimi, artık değer ve katılma alacağı hesabı.")
 
     col_e1, col_e2 = st.columns(2)
     with col_e1:
-        st.subheader("Eş 1 Mali Verileri")
+        st.markdown("#### Eş 1 Mali Verileri")
         aktif_1 = st.number_input("Eş 1 Mal Varlığı Aktifi (TL)", min_value=0.0, value=6000000.0, step=100000.0, format="%.2f", key="t4_a1")
         borc_1 = st.number_input("Eş 1 Borçları (TL)", min_value=0.0, value=1000000.0, step=20000.0, format="%.2f", key="t4_b1")
         kisisel_1 = st.number_input("Eş 1 Kişisel Malları (TMK m. 220) (TL)", min_value=0.0, value=1500000.0, step=50000.0, format="%.2f", key="t4_k1")
 
     with col_e2:
-        st.subheader("Eş 2 Mali Verileri")
+        st.markdown("#### Eş 2 Mali Verileri")
         aktif_2 = st.number_input("Eş 2 Mal Varlığı Aktifi (TL)", min_value=0.0, value=4000000.0, step=100000.0, format="%.2f", key="t4_a2")
         borc_2 = st.number_input("Eş 2 Borçları (TL)", min_value=0.0, value=500000.0, step=20000.0, format="%.2f", key="t4_b2")
         kisisel_2 = st.number_input("Eş 2 Kişisel Malları (TMK m. 220) (TL)", min_value=0.0, value=1000000.0, step=50000.0, format="%.2f", key="t4_k2")
@@ -379,8 +423,8 @@ with tabs[3]:
 # TAB 5: TENKİS (SAKLI PAY İHLALİ)
 # ==========================================
 with tabs[4]:
-    st.header("📜 Modül 5: Saklı Pay İhlali ve Tenkis Analiz Modülü (TMK m. 560 vd.)")
-    st.markdown("Ölüme bağlı tasarrufların (vasiyetname / ölüme bağlı kazandırmalar) ve denkleştirmeye tabi karşılıksız kazandırmaların saklı payları ihlal edip etmediğinin tespiti.")
+    st.markdown("### 📜 Modül 5: Saklı Pay İhlali ve Tenkis Analiz Modülü (TMK m. 560 vd.)")
+    st.write("Ölüme bağlı tasarrufların (vasiyetname / ölüme bağlı kazandırmalar) ve denkleştirmeye tabi karşılıksız kazandırmaların saklı payları ihlal edip etmediğinin tespiti.")
 
     base_t5 = st.session_state.get("net_tereke", 10250000.0)
     col_t5_1, col_t5_2 = st.columns(2)
@@ -446,8 +490,8 @@ with tabs[4]:
 # TAB 6: TAPU & HARÇ DÜŞÜMLERİ
 # ==========================================
 with tabs[5]:
-    st.header("🏛️ Modül 6: Tapu İntikal Harçları ve Döner Sermaye Giderleri")
-    st.markdown("Gayrimenkul intikallerinde Harçlar Kanunu ve Tapu Sicil Müdürlüğü tarifelerine göre ödenecek harç, döner sermaye ve masrafların mirasçı paylarına yansıtılması.")
+    st.markdown("### 🏛️ Modül 6: Tapu İntikal Harçları ve Döner Sermaye Giderleri")
+    st.write("Gayrimenkul intikallerinde Harçlar Kanunu ve Tapu Sicil Müdürlüğü tarifelerine göre ödenecek harç, döner sermaye ve masrafların mirasçı paylarına yansıtılması.")
 
     base_gayrimenkul_t6 = st.session_state.get("gayrimenkul_degeri", 7500000.0)
     col_t6_1, col_t6_2 = st.columns(2)
@@ -504,8 +548,8 @@ with tabs[5]:
 # TAB 7: 📊 ÇOK SAYFALI KURUMSAL RAPOR
 # ==========================================
 with tabs[6]:
-    st.header("📊 Modül 7: Çok Sayfalı Kurumsal Excel & PDF Raporlama Motoru")
-    st.markdown("Tüm modüllerde yapılan hesaplama adımlarını; kurumsal kurumsal renk paleti (Koyu Lacivert Başlıklar), 14 punto kalın başlık fontları ve 12 punto hücre fontlarıyla profesyonel Excel formatında dışa aktarın.")
+    st.markdown("### 📊 Modül 7: Çok Sayfalı Kurumsal Excel & PDF Raporlama Motoru")
+    st.write("Tüm modüllerde yapılan hesaplama adımlarını; kurumsal renk paleti (Koyu Lacivert Başlıklar), 14 punto kalın başlık fontları ve 12 punto hücre fontlarıyla profesyonel Excel formatında dışa aktarın.")
 
     if st.button("📥 Kurumsal Çok Sayfalı Excel Raporunu Üret ve İndir", type="primary", key="btn_excel_export"):
         try:
@@ -557,7 +601,7 @@ with tabs[6]:
             wb = load_workbook(output_buffer)
             
             header_font = Font(name='Calibri', size=14, bold=True, color='FFFFFF')
-            header_fill = PatternFill(start_color='1F4E78', end_color='1F4E78', fill_type='solid') # Koyu Lacivert
+            header_fill = PatternFill(start_color='1F4E78', end_color='1F4E78', fill_type='solid') 
             cell_font = Font(name='Calibri', size=12, bold=False)
             thin_border = Border(
                 left=Side(style='thin', color='D9D9D9'),
@@ -605,8 +649,8 @@ with tabs[6]:
 # TAB 8: 📋 SİSTEM LOGLARI VE DENETİM İZİ
 # ==========================================
 with tabs[7]:
-    st.header("📋 Modül 8: Şifreli Denetim İzi ve Oturum Güvenlik Logları (Audit Trail)")
-    st.markdown("ISO / KVKK / HMK denetim gereklilikleri uyarınca oturum boyunca gerçekleştirilen tüm veri işleme adımlarının zaman damgalı dökümü.")
+    st.markdown("### 📋 Modül 8: Şifreli Denetim İzi ve Oturum Güvenlik Logları (Audit Trail)")
+    st.write("ISO / KVKK / HMK denetim gereklilikleri uyarınca oturum boyunca gerçekleştirilen tüm veri işleme adımlarının zaman damgalı dökümü.")
 
     if "audit_trail" in st.session_state and st.session_state["audit_trail"]:
         for item in st.session_state["audit_trail"]:
